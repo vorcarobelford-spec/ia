@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from google import genai
+from memory import salvar, buscar
 import os
 
 app = FastAPI()
