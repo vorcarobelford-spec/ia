@@ -1,50 +1,65 @@
 import time
-from agent import executar
 import requests
+from agent import executar
+from memory import adicionar, buscar
+from rules import verificar, adicionar as add_rule
+from monitor import ler_logs
 
 URL = "https://ia-production-2652.up.railway.app/ia"
 
+
 def perguntar_ia(contexto):
-    r = requests.post(URL, json={"texto": contexto})
-    return r.json().get("resposta", "")
+    try:
+        r = requests.post(URL, json={"texto": contexto}, timeout=15)
+        return r.json().get("resposta", "")
+    except:
+        return "AÇÃO: none\nMOTIVO: erro"
 
 
 while True:
-    print("\n🔍 Observando sistema...")
+    print("\n🔍 Monitorando...")
 
-    # exemplo: ver processos
-    estado = executar("ps aux | head -n 5")
+    logs = ler_logs()
+    memoria = buscar(logs)
 
-    prompt = f"""
+    contexto = f"""
 Você é um agente inteligente.
 
-Estado atual:
-{estado}
+Logs recentes:
+{logs}
 
-Decida:
-- o que está acontecendo
-- se precisa agir
-- qual comando executar (se necessário)
+Memória relevante:
+{memoria}
 
-Responda no formato:
+Decida ação.
+
+Formato:
 AÇÃO: comando_ou_none
 MOTIVO: explicação
 """
 
-    resposta = perguntar_ia(prompt)
+    resposta = perguntar_ia(contexto)
 
-    print("\n🧠 IA decidiu:")
+    print("\n🧠 IA:")
     print(resposta)
 
+    # extrair ação
     if "AÇÃO:" in resposta:
-        linha = [l for l in resposta.split("\n") if "AÇÃO:" in l]
+        comando = [l for l in resposta.split("\n") if "AÇÃO:" in l][0]
+        comando = comando.replace("AÇÃO:", "").strip()
 
-        if linha:
-            comando = linha[0].replace("AÇÃO:", "").strip()
+        # verificar regra primeiro
+        regra = verificar(logs)
 
-            if comando != "none":
-                print(f"\n⚡ Executando: {comando}")
-                output = executar(comando)
-                print(output)
+        if regra:
+            print(f"\n⚡ Regra ativada: {regra}")
+            comando = regra
+
+        if comando != "none":
+            print(f"\n⚡ Executando: {comando}")
+            resultado = executar(comando)
+            print(resultado)
+
+            adicionar(logs, comando, resultado)
 
     time.sleep(10)
