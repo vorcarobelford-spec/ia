@@ -20,7 +20,7 @@ def ia(msg: Msg):
                 "Content-Type": "application/json"
             },
             json={
-                "model": "mistralai/mistral-7b-instruct",
+                "model": "openchat/openchat-7b",
                 "messages": [
                     {"role": "user", "content": msg.texto}
                 ]
