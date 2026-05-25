@@ -1,9 +1,8 @@
 import time
 import requests
 from agent import executar
-from memory import adicionar, buscar
-from rules import verificar, adicionar as add_rule
-from monitor import ler_logs
+from watcher import monitorar_script
+from learning import registrar, sugerir
 
 URL = "https://ia-production-2652.up.railway.app/ia"
 
@@ -17,49 +16,51 @@ def perguntar_ia(contexto):
 
 
 while True:
-    print("\n🔍 Monitorando...")
+    print("\n🔍 Monitorando script...")
 
-    logs = ler_logs()
-    memoria = buscar(logs)
+    logs = monitorar_script("script.log")
 
-    contexto = f"""
-Você é um agente inteligente.
+    # 🧠 tentativa de auto-aprendizado
+    sugestao = sugerir(logs)
 
-Logs recentes:
+    if sugestao:
+        print(f"\n🧠 Aprendizado encontrado → {sugestao}")
+        comando = sugestao
+    else:
+        prompt = f"""
+Você é um agente autônomo.
+
+Analise o log:
+
 {logs}
 
-Memória relevante:
-{memoria}
-
-Decida ação.
+Se houver erro:
+- descubra o problema
+- proponha solução
 
 Formato:
 AÇÃO: comando_ou_none
 MOTIVO: explicação
 """
 
-    resposta = perguntar_ia(contexto)
+        resposta = perguntar_ia(prompt)
 
-    print("\n🧠 IA:")
-    print(resposta)
+        print("\n🧠 IA:")
+        print(resposta)
 
-    # extrair ação
-    if "AÇÃO:" in resposta:
-        comando = [l for l in resposta.split("\n") if "AÇÃO:" in l][0]
-        comando = comando.replace("AÇÃO:", "").strip()
+        if "AÇÃO:" in resposta:
+            comando = [l for l in resposta.split("\n") if "AÇÃO:" in l][0]
+            comando = comando.replace("AÇÃO:", "").strip()
+        else:
+            comando = "none"
 
-        # verificar regra primeiro
-        regra = verificar(logs)
+    # ⚡ execução
+    if comando != "none":
+        print(f"\n⚡ Executando: {comando}")
+        resultado = executar(comando)
+        print(resultado)
 
-        if regra:
-            print(f"\n⚡ Regra ativada: {regra}")
-            comando = regra
-
-        if comando != "none":
-            print(f"\n⚡ Executando: {comando}")
-            resultado = executar(comando)
-            print(resultado)
-
-            adicionar(logs, comando, resultado)
+        # 💾 aprendizado automático
+        registrar(logs, comando, resultado)
 
     time.sleep(10)
