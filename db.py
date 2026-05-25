@@ -3,33 +3,40 @@ import os
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-conn = psycopg2.connect(DATABASE_URL)
-cur = conn.cursor()
 
-# Criar tabela se não existir
-cur.execute("""
-CREATE TABLE IF NOT EXISTS memoria (
-    id SERIAL PRIMARY KEY,
-    texto TEXT
-)
-""")
-conn.commit()
+def get_conn():
+    return psycopg2.connect(DATABASE_URL)
 
 
 def salvar(texto):
     try:
-        cur.execute("INSERT INTO memoria (texto) VALUES (%s)", (texto,))
+        conn = get_conn()
+        cur = conn.cursor()
+
+        cur.execute(
+            "INSERT INTO memoria (texto) VALUES (%s)",
+            (texto,)
+        )
+
         conn.commit()
+        cur.close()
+        conn.close()
+
     except Exception as e:
-        print("Erro ao salvar memória:", e)
+        print("Erro ao salvar:", e)
 
 
 def buscar(query=None):
     try:
-        cur.execute("SELECT texto FROM memoria ORDER BY id DESC LIMIT 50")
+        conn = get_conn()
+        cur = conn.cursor()
+
+        cur.execute("SELECT texto FROM memoria ORDER BY id DESC LIMIT 30")
         rows = [r[0] for r in cur.fetchall()]
 
-        # Busca simples inteligente
+        cur.close()
+        conn.close()
+
         if query:
             relevantes = [r for r in rows if query.lower() in r.lower()]
             if relevantes:
@@ -38,5 +45,5 @@ def buscar(query=None):
         return "\n".join(rows[-10:])
 
     except Exception as e:
-        print("Erro ao buscar memória:", e)
+        print("Erro ao buscar:", e)
         return ""
