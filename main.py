@@ -5,7 +5,7 @@ import os
 
 app = FastAPI()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.getenv("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"))
 
 class Msg(BaseModel):
     texto: str
