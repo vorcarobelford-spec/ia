@@ -10,28 +10,32 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 class Msg(BaseModel):
     texto: str
-memoria = []
-
-def salvar(texto):
-    memoria.append(texto)
-
-def buscar():
-    return "\n".join(memoria[-5:])  # últimas 5 interações
-
-@app.get("/")
-def home():
-    return {"status": "IA ONLINE 🧠🔥"}
 
 @app.post("/ia")
 def ia(msg: Msg):
     try:
+        contexto = buscar()
+
+        prompt = f"""
+Contexto da conversa:
+{contexto}
+
+Usuário: {msg.texto}
+IA:
+"""
+
         response = client.models.generate_content(
             model="gemini-1.5-flash",
-            contents=msg.texto
+            contents=prompt
         )
 
-        return {"resposta": response.text}
-    
+        resposta = response.text
+
+        # salvar aprendizado
+        salvar(f"Usuário: {msg.texto}")
+        salvar(f"IA: {resposta}")
+
+        return {"resposta": resposta}
+
     except Exception as e:
         return {"erro": str(e)}
-        
