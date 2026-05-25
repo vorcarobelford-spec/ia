@@ -1,15 +1,27 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from openai import OpenAI
+import os
 
 app = FastAPI()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 class Msg(BaseModel):
     texto: str
 
 @app.get("/")
 def home():
-    return {"status": "IA ONLINE 🚀"}
+    return {"status": "IA ONLINE 🧠🔥"}
 
 @app.post("/ia")
 def ia(msg: Msg):
-    return {"resposta": f"Você disse: {msg.texto}"}
+    resposta = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Você é uma IA inteligente, útil e direta."},
+            {"role": "user", "content": msg.texto}
+        ]
+    )
+
+    return {"resposta": resposta.choices[0].message.content}
