@@ -3,16 +3,19 @@ from pydantic import BaseModel
 import requests
 import os
 from db import salvar, buscar
+from datetime import datetime
 
 app = FastAPI()
 
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-# MENOS MODELOS = MAIS ESTÁVEL
+# =========================
+# MODELOS (mantidos)
+# =========================
 modelos = [
     "deepseek/deepseek-v4-flash:free",
-     "poolside/laguna-m.1:free",
-     "openrouter/owl-alpha",
+    "poolside/laguna-m.1:free",
+    "openrouter/owl-alpha",
 ]
 
 
@@ -22,7 +25,11 @@ class Msg(BaseModel):
 
 @app.get("/")
 def home():
-    return {"status": "IA ESTÁVEL ONLINE 🧠🔥"}
+    return {
+        "status": "IA ESTÁVEL ONLINE 🧠🔥",
+        "modo": "multi-modelo",
+        "hora": datetime.now().strftime("%H:%M:%S")
+    }
 
 
 @app.post("/ia")
@@ -31,9 +38,15 @@ def ia(msg: Msg):
         ctx = buscar(msg.texto)
 
         prompt = f"""
-Você é uma IA inteligente que aprende com o usuário.
+Você é uma IA inteligente.
 
-Memória:
+Responda:
+- direto
+- organizado
+- com parágrafos curtos
+- sem enrolação
+
+Memória relevante:
 {ctx}
 
 Usuário: {msg.texto}
@@ -54,26 +67,36 @@ IA:
                             {"role": "user", "content": prompt}
                         ]
                     },
-                    timeout=10  # 🔥 reduzido
+                    timeout=10
                 )
 
                 data = response.json()
 
                 if "choices" in data:
-                    resposta = data["choices"][0]["message"]["content"]
+                    resposta = data["choices"][0]["message"]["content"].strip()
 
+                    # salvar memória
                     salvar(f"Usuário: {msg.texto}")
                     salvar(f"IA: {resposta}")
 
                     return {
+                        "ok": True,
                         "modelo": modelo,
-                        "resposta": resposta
+                        "resposta": resposta,
+                        "timestamp": datetime.now().strftime("%H:%M:%S")
                     }
 
-            except:
+            except Exception as e:
+                print(f"Erro no modelo {modelo}: {e}")
                 continue
 
-        return {"erro": "Nenhum modelo respondeu"}
+        return {
+            "ok": False,
+            "erro": "Nenhum modelo respondeu"
+        }
 
     except Exception as e:
-        return {"erro": str(e)}
+        return {
+            "ok": False,
+            "erro": str(e)
+        }
