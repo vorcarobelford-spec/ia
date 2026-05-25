@@ -11,8 +11,8 @@ API_KEY = os.getenv("OPENROUTER_API_KEY")
 # MENOS MODELOS = MAIS ESTÁVEL
 modelos = [
     "deepseek/deepseek-v4-flash:free",
-    "meta-llama/llama-3-8b-instruct:free",
-    "qwen/qwen3-next-80b-a3b-instruct:free"
+     "baidu/cobuddy:free",
+     "openrouter/owl-alpha",
 ]
 
 
