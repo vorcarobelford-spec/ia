@@ -9,6 +9,13 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 class Msg(BaseModel):
     texto: str
+memoria = []
+
+def salvar(texto):
+    memoria.append(texto)
+
+def buscar():
+    return "\n".join(memoria[-5:])  # últimas 5 interações
 
 @app.get("/")
 def home():
