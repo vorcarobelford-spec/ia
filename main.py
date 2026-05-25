@@ -1,41 +1,42 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from google import genai
-from memory import salvar, buscar
+import requests
 import os
 
 app = FastAPI()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 class Msg(BaseModel):
     texto: str
 
+@app.get("/")
+def home():
+    return {"status": "IA ONLINE 🧠🔥"}
+
 @app.post("/ia")
 def ia(msg: Msg):
     try:
-        contexto = buscar()
-
-        prompt = f"""
-Contexto da conversa:
-{contexto}
-
-Usuário: {msg.texto}
-IA:
-"""
-
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "mistralai/mistral-7b-instruct",
+                "messages": [
+                    {"role": "user", "content": msg.texto}
+                ]
+            }
         )
 
-        resposta = response.text
+        data = response.json()
 
-        # salvar aprendizado
-        salvar(f"Usuário: {msg.texto}")
-        salvar(f"IA: {resposta}")
-
-        return {"resposta": resposta}
+        return {
+            "resposta": data["choices"][0]["message"]["content"]
+        }
 
     except Exception as e:
+        return {"erro": str(e)}
         return {"erro": str(e)}
