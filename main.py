@@ -21,14 +21,19 @@ def home():
 
 @app.post("/ia")
 def ia(msg: Msg):
-    resposta = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "Você é uma IA inteligente, útil e direta."},
-            {"role": "user", "content": msg.texto}
-        ]
-    )
+    try:
+        resposta = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Você é uma IA inteligente, útil e direta."},
+                {"role": "user", "content": msg.texto}
+            ]
+        )
 
+        return {"resposta": resposta.choices[0].message.content}
+
+    except Exception as e:
+        return {"erro": str(e)}
     return {"resposta": resposta.choices[0].message.content}
 
     return {"resposta": resposta.choices[0].message.content}
