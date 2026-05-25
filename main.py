@@ -10,10 +10,6 @@ API_KEY = os.getenv("OPENROUTER_API_KEY")
 class Msg(BaseModel):
     texto: str
 
-@app.get("/")
-def home():
-    return {"status": "IA ONLINE 🧠🔥"}
-
 @app.post("/ia")
 def ia(msg: Msg):
     try:
@@ -33,10 +29,15 @@ def ia(msg: Msg):
 
         data = response.json()
 
-        return {
-            "resposta": data["choices"][0]["message"]["content"]
-        }
+        # DEBUG (importante)
+        print(data)
+
+        if "choices" in data:
+            return {
+                "resposta": data["choices"][0]["message"]["content"]
+            }
+        else:
+            return {"erro_api": data}
 
     except Exception as e:
-        return {"erro": str(e)}
         return {"erro": str(e)}
