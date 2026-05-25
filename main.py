@@ -1,16 +1,13 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from openai import OpenAI
+import google.generativeai as genai
 import os
 
 app = FastAPI()
 
-api_key = os.getenv("OPENAI_API_KEY")
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-if not api_key:
-    print("⚠️ API KEY NÃO ENCONTRADA")
-
-client = OpenAI(api_key=api_key)
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 class Msg(BaseModel):
     texto: str
@@ -22,18 +19,7 @@ def home():
 @app.post("/ia")
 def ia(msg: Msg):
     try:
-        resposta = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "Você é uma IA inteligente, útil e direta."},
-                {"role": "user", "content": msg.texto}
-            ]
-        )
-
-        return {"resposta": resposta.choices[0].message.content}
-
+        response = model.generate_content(msg.texto)
+        return {"resposta": response.text}
     except Exception as e:
         return {"erro": str(e)}
-    return {"resposta": resposta.choices[0].message.content}
-
-    return {"resposta": resposta.choices[0].message.content}
