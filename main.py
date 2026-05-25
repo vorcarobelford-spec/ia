@@ -2,25 +2,14 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
 import os
+from db import salvar, buscar
 
 app = FastAPI()
 
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # =========================
-# MEMÓRIA GLOBAL (única)
-# =========================
-memoria = []
-
-def salvar(texto):
-    memoria.append(texto)
-
-def contexto():
-    return "\n".join(memoria[-10:])  # últimas 10 interações
-
-
-# =========================
-# MODELOS (ORDEM DE PRIORIDADE)
+# MODELOS (fallback automático)
 # =========================
 modelos = [
     "deepseek/deepseek-v4-flash:free",
@@ -40,18 +29,25 @@ class Msg(BaseModel):
 
 @app.get("/")
 def home():
-    return {"status": "IA MULTI-MODELO ONLINE 🧠🔥"}
+    return {"status": "IA MULTI-MODELO COM MEMÓRIA 🧠🔥"}
 
 
 @app.post("/ia")
 def ia(msg: Msg):
     try:
-        ctx = contexto()
+        # Buscar memória relevante
+        ctx = buscar(msg.texto)
 
         prompt = f"""
 Você é uma IA inteligente que aprende com o usuário.
 
-Memória:
+Regras:
+- Lembre das preferências do usuário
+- Adapte sua forma de falar
+- Seja clara e direta
+- Evolua com o tempo
+
+Memória relevante:
 {ctx}
 
 Usuário: {msg.texto}
@@ -72,7 +68,7 @@ IA:
                             {"role": "user", "content": prompt}
                         ]
                     },
-                    timeout=20
+                    timeout=25
                 )
 
                 data = response.json()
@@ -81,7 +77,7 @@ IA:
                 if "choices" in data:
                     resposta = data["choices"][0]["message"]["content"]
 
-                    # salvar memória
+                    # Salvar memória permanente
                     salvar(f"Usuário: {msg.texto}")
                     salvar(f"IA: {resposta}")
 
