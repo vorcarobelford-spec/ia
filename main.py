@@ -30,3 +30,5 @@ def ia(msg: Msg):
     )
 
     return {"resposta": resposta.choices[0].message.content}
+
+    return {"resposta": resposta.choices[0].message.content}
